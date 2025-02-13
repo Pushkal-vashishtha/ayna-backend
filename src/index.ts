@@ -5,7 +5,8 @@ export default {
   register() {},
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
-    const wss = new WebSocket.Server({ port: 1338 });
+    const server = strapi.server.httpServer; // Attach to existing Strapi server
+    const wss = new WebSocket.Server({ server });
 
     wss.on("connection", (ws) => {
       console.log("🔗 Client connected");
@@ -28,12 +29,12 @@ export default {
             id: savedMessage.id,
             text: savedMessage.text,
             sender: savedMessage.sender,
-            timestamp: savedMessage.createdAt, // ✅ Fix timestamp issue
+            timestamp: savedMessage.createdAt, // ✅ Fix timestamp retrieval
           });
 
-          // ✅ Broadcast message to everyone EXCEPT the sender
+          // ✅ Broadcast message to all clients
           wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
+            if (client.readyState === WebSocket.OPEN) {
               client.send(broadcastMessage);
             }
           });
@@ -47,6 +48,6 @@ export default {
       });
     });
 
-    console.log("🚀 WebSocket server running on ws://localhost:1338");
+    console.log(`🚀 WebSocket server running on wss://[YOUR_DEPLOYED_URL]`);
   },
 };
